@@ -5,32 +5,32 @@ contract FitnessTracking {
 
     // Estructura para los datos del usuario
     struct Measurement {
-        uint256 weight;
-        uint256 BMI;
-        uint256 bodyFat;
-        uint256 fatFreeBodyWeight;
-        uint256 subcutaneousFat;
-        uint256 visceralFat;
-        uint256 bodyWater;
-        uint256 skeletalMuscle;
-        uint256 muscleMass;
-        uint256 boneMass;
-        uint256 protein;
-        uint256 BMR;
-        uint256 metabolicAge;
-        uint256 date;
+        uint8 weight; //peso
+        uint8 BMI; // indice de masa corporal
+        uint8 bodyFat; // grasa
+        uint8 fatFreeBodyWeight; 
+        uint8 subcutaneousFat; //grasa subcutea
+        uint8 visceralFat; //visceral grasa
+        uint8 bodyWater; //agua corporal
+        uint8 skeletalMuscle; // musculo esqueletico
+        uint8 muscleMass; //masa muscular
+        uint8 boneMass; // masa osea
+        uint8 protein; // proteina
+        uint8 BMR; // cantidad de energia que el cuerpo necesita
+        uint8 metabolicAge; // edad metabolica
+        uint8 date; // fecha 
     }
 
     // Estructura para los objetivos del usuario
     struct Goal {
-        uint256 targetBodyFatPercent;
-        uint256 targetMuscleMassPercent;
+        uint8 targetBodyFatPercent;
+        uint8 targetMuscleMassPercent;
     }
 
     // Estructura para el coach
     struct Coach {
         address coachAddress;
-        uint256 coachId;
+        uint8 coachId;
     }
 
     // Mappings para usuarios y coaches
@@ -43,36 +43,45 @@ contract FitnessTracking {
     event CoachAssigned(address indexed user, address indexed coach);
     event MeasurementLogged(address indexed user, Measurement measurement);
     event GoalUpdated(address indexed user, Goal goal);
-    
+   
+    address public owner;
+
+     constructor(){
+        owner = msg.sender;
+    }
+    //Inicio de funciones
     // Agregar un coach
-    function addCoach(address _coachAddress, uint256 _coachId) external {
-      //
+    function addCoach(address _coachAddress, uint8 _coachId) external {
+        require(msg.sender == owner, "You are not owner!!");
         coaches[_coachAddress] = Coach(_coachAddress, _coachId);
     }
 
     // Asignar un coach a un usuario
-    function assignCoach(address _user) external {
-        require(coaches[msg.sender].coachAddress != address(0), "Only registered coaches can assign.");
-        userToCoach[_user] = msg.sender;
-        emit CoachAssigned(_user, msg.sender);
+    function assignCoach(address _user, address _coach) external {
+        require(msg.sender == owner, "You are not owner!!");
+        require(coaches[_coach].coachAddress != address(0), "Only registered coaches can be assign.");
+        userToCoach[_user] = _coach;
+        emit CoachAssigned(_user, _coach);
     }
 
     // Registrar mediciones del usuario
     function logMeasurement(
-        uint256 _weight,
-        uint256 _BMI,
-        uint256 _bodyFat,
-        uint256 _fatFreeBodyWeight,
-        uint256 _subcutaneousFat,
-        uint256 _visceralFat,
-        uint256 _bodyWater,
-        uint256 _skeletalMuscle,
-        uint256 _muscleMass,
-        uint256 _boneMass,
-        uint256 _protein,
-        uint256 _BMR,
-        uint256 _metabolicAge
+        uint8 _weight,
+        uint8 _BMI,
+        uint8 _bodyFat,
+        uint8 _fatFreeBodyWeight,
+        uint8 _subcutaneousFat,
+        uint8 _visceralFat,
+        uint8 _bodyWater,
+        uint8 _skeletalMuscle,
+        uint8 _muscleMass,
+        uint8 _boneMass,
+        uint8 _protein,
+        uint8 _BMR,
+        uint8 _metabolicAge,
+        address  _user
     ) external {
+        require(userToCoach[_user] == msg.sender);
         Measurement memory newMeasurement = Measurement({
             weight: _weight,
             BMI: _BMI,
@@ -90,27 +99,29 @@ contract FitnessTracking {
             date: block.timestamp
         });
 
-        userMeasurements[msg.sender].push(newMeasurement);
-        emit MeasurementLogged(msg.sender, newMeasurement);
+        userMeasurements[_user].push(newMeasurement);
+        emit MeasurementLogged(_user, newMeasurement);
     }
 
     // Actualizar el objetivo del usuario
-    function setGoal(uint256 _targetBodyFatPercent, uint256 _targetMuscleMassPercent) external {
-      //require
-        userGoals[msg.sender] = Goal({
+    function setGoal(uint8 _targetBodyFatPercent, uint8 _targetMuscleMassPercent, address _user) external {
+       require(userToCoach[_user] == msg.sender);
+        userGoals[_user] = Goal({
             targetBodyFatPercent: _targetBodyFatPercent,
             targetMuscleMassPercent: _targetMuscleMassPercent
         });
-        emit GoalUpdated(msg.sender, Goal(_targetBodyFatPercent, _targetMuscleMassPercent));
+        emit GoalUpdated(_user, Goal(_targetBodyFatPercent, _targetMuscleMassPercent));
     }
 
     // Función para obtener mediciones del usuario
     function getMeasurements(address _user) external view returns (Measurement[] memory) {
+        require(userToCoach[_user] == msg.sender || _user == msg.msg.sender);
         return userMeasurements[_user];
     }
 
     // Función para obtener el objetivo del usuario
     function getGoal(address _user) external view returns (Goal memory) {
+        require(userToCoach[_user] == msg.sender || _user == msg.msg.sender);
         return userGoals[_user];
     }
 }
