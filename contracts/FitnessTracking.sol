@@ -44,9 +44,9 @@ contract FitnessTracking {
 
     // contract owner
     address public owner;
-    DynamicNFT public nftContract; // Reference to the DynamicNFT contract
+    DynamicNFT private nftContract; // Reference to the DynamicNFT contract
 
-    constructor() {
+    constructor(address _nftContractAddress) {
         owner = msg.sender;
         nftContract = DynamicNFT(_nftContractAddress);
     }
