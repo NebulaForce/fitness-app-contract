@@ -8,21 +8,51 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract DynamicNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
-    constructor(address initialOwner)
-        ERC721("MyToken", "MTK")
-        Ownable(initialOwner)
+    // Constants for different NFT types
+    string private constant BASE_URI_FIRST_NFT = "https://gateway.pinata.cloud/ipfs/QmUzY8icfRVAQbePaLWUPfwdJNB7rAsUTdED14XoymxyP3";
+    string private constant BASE_URI_BODY_FAT = "https://gateway.pinata.cloud/ipfs/QmVHh4fCDcqa4MGjYnJP4n4kyKFy4v4RavefGDfg7er237";
+    string private constant BASE_URI_MUSCLE_MASS = "https://gateway.pinata.cloud/ipfs/QmPqqvsyi7L3R3JF3RZGX3S25UtFWC27763S5HPr8EHWxX";
+    
+    // Supply limits for each type of NFT
+    uint256 public constant MAX_SUPPLY_FIRST_NFT = 20;
+    uint256 public constant MAX_SUPPLY_BODY_FAT = 20;
+    uint256 public constant MAX_SUPPLY_MUSCLE_MASS = 20;
+    
+    // Current supply counters
+    uint256 private currentSupplyFirstNFT;
+    uint256 private currentSupplyBodyFat;
+    uint256 private currentSupplyMuscleMass;
+    
+    // Mapping to track the token type
+    mapping(uint256 => string) private tokenTypes;
+
+    constructor(address initialOwner) 
+        ERC721("MyFitnessNFT", "MFN") 
+        Ownable(0x1B04132D7F2427cB160AB57d0829C48D93e3fc91) 
     {}
 
-    function safeMint(address to, uint256 tokenId, string memory uri)
-        public
-        onlyOwner
-    {
+    function safeMint(address to, uint256 tokenId, string memory tokenType) public onlyOwner {
+        require(keccak256(bytes(tokenType)) == keccak256(bytes("firstNFT")) && currentSupplyFirstNFT < MAX_SUPPLY_FIRST_NFT ||
+                keccak256(bytes(tokenType)) == keccak256(bytes("bodyFat")) && currentSupplyBodyFat < MAX_SUPPLY_BODY_FAT ||
+                keccak256(bytes(tokenType)) == keccak256(bytes("muscleMass")) && currentSupplyMuscleMass < MAX_SUPPLY_MUSCLE_MASS,
+                "Max supply reached for this type");
+
         _safeMint(to, tokenId);
-        _setTokenURI(tokenId, uri);
+        tokenTypes[tokenId] = tokenType;
+        
+        if (keccak256(bytes(tokenType)) == keccak256(bytes("firstNFT"))) {
+            _setTokenURI(tokenId, BASE_URI_FIRST_NFT);
+            currentSupplyFirstNFT++;
+        } else if (keccak256(bytes(tokenType)) == keccak256(bytes("bodyFat"))) {
+            _setTokenURI(tokenId, BASE_URI_BODY_FAT);
+            currentSupplyBodyFat++;
+        } else if (keccak256(bytes(tokenType)) == keccak256(bytes("muscleMass"))) {
+            _setTokenURI(tokenId, BASE_URI_MUSCLE_MASS);
+            currentSupplyMuscleMass++;
+        }
     }
 
-    // The following functions are overrides required by Solidity.
-
+    // Override functions required by Solidity
     function _update(address to, uint256 tokenId, address auth)
         internal
         override(ERC721, ERC721Enumerable)
