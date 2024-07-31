@@ -164,10 +164,4 @@ contract FitnessTracking {
         require(userToCoach[_user] == msg.sender || _user == msg.sender);
         return userMeasurements[_user];
     }
-
-    // Get user goals
-    function getGoal(address _user) external view returns (Goal memory) {
-        require(userToCoach[_user] == msg.sender || _user == msg.sender);
-        return userGoals[_user];
-    }
 }
