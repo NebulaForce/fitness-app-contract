@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "./DynamicNFT.sol"; // Import your DynamicNFT contract
 
 contract FitnessTracking {
+
     // User measurements
     struct Measurement {
         uint8 weight;

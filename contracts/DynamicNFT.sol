@@ -23,11 +23,11 @@ contract DynamicNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
     uint256 private currentSupplyBodyFat;
     uint256 private currentSupplyMuscleMass;
     
-    // Mapping to track the token type
+    // Mapping to track the token type //ERC721("MyFitnessNFT", "MFN")
     mapping(uint256 => string) private tokenTypes;
 
     constructor(address initialOwner) 
-        ERC721("MyFitnessNFT", "MFN") 
+        ERC721("DynamicNFT", "MTK")
         Ownable(0x1B04132D7F2427cB160AB57d0829C48D93e3fc91) 
     {}
 
