@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./DynamicNFT.sol"; // Import your DynamicNFT contract
+// import "./DynamicNFT.sol"; // Import your DynamicNFT contract
 
 contract FitnessTracking {
 
@@ -13,29 +13,33 @@ contract FitnessTracking {
         uint8 visceralFat;
         uint8 bodyWater;
         uint8 muscleMass;
-        uint8 metabolicAge;
         uint256 date;
     }
 
     // User goals
     struct Goal {
-        uint8 targetBodyFatPercent;
-        uint8 targetMuscleMassPercent;
+        uint8 targetBodyFatPercentage;
+        uint8 targetMuscleMass;
     }
 
     // Coach data
     struct Coach {
-        address coachAddress;
-        uint8 coachId;
+        string name;
+        string email;
+    }
+
+    // User data
+    struct User {
+        string name;
+        string email;
     }
 
     // Users and coaches mappings
     mapping(address => Coach) public coaches;
+    mapping(address => User) public users;
     mapping(address => address) public userToCoach;
     mapping(address => Measurement[]) public userMeasurements;
     mapping(address => Goal) public userGoals;
-
-    address[] public users; // Track all users
 
     // events
     event CoachAssigned(address indexed user, address indexed coach);
@@ -45,31 +49,34 @@ contract FitnessTracking {
 
     // contract owner
     address public owner;
-    DynamicNFT private nftContract; // Reference to the DynamicNFT contract
+    // DynamicNFT private nftContract; // Reference to the DynamicNFT contract
 
-    constructor(address _nftContractAddress) {
+    constructor() {
         owner = msg.sender;
-        nftContract = DynamicNFT(_nftContractAddress);
+        // nftContract = DynamicNFT(_nftContractAddress);
     }
 
     // Register new coach
-    function addCoach(address _coachAddress, uint8 _coachId) external {
+    function addCoach(address _coachAddress, string memory _name, string memory _email) external {
       require(msg.sender == owner, "You are not owner!!");
-      coaches[_coachAddress] = Coach(_coachAddress, _coachId);
+      coaches[_coachAddress] = Coach(_name, _email);
     }
 
     // Register user
-    function register() external {
-      users.push(msg.sender);
-      userToCoach[msg.sender] = address(0);
+    function register(string memory _name, string memory _email) external {
+      users[msg.sender] = User(_name, _email);
+
+      // Mint initial NFT for the user
+    //   string memory initialTokenURI = "ipfs://<initial-metadata-uri>";
+    //   nftContract.mint(msg.sender, initialTokenURI);
     }
 
     // Assign coach to user
     function assignCoach(address _user, address _coach) external {
         require(msg.sender == owner, "You are not owner!!");
         require(
-            coaches[_coach].coachAddress != address(0),
-            "Only registered coaches can be assign."
+            bytes(coaches[_coach].name).length > 0,
+            "Only registered coaches can be assigned."
         );
         userToCoach[_user] = _coach;
         emit CoachAssigned(_user, _coach);
@@ -83,7 +90,6 @@ contract FitnessTracking {
         uint8 _visceralFat,
         uint8 _bodyWater,
         uint8 _muscleMass,
-        uint8 _metabolicAge,
         address _user
     ) external {
         require(userToCoach[_user] == msg.sender);
@@ -94,51 +100,61 @@ contract FitnessTracking {
             visceralFat: _visceralFat,
             bodyWater: _bodyWater,
             muscleMass: _muscleMass,
-            metabolicAge: _metabolicAge,
             date: block.timestamp
         });
 
         userMeasurements[_user].push(newMeasurement);
         emit MeasurementLogged(_user, newMeasurement);
         
-        // Check if the user has achieved their goals and mint an NFT
-        checkAndMintNFT(_user);
-    }
-
-    // Create user goal
-    function setGoal(
-        uint8 _targetBodyFatPercent,
-        uint8 _targetMuscleMassPercent,
-        address _user
-    ) external {
-        require(userToCoach[_user] == msg.sender);
-        userGoals[_user] = Goal({
-            targetBodyFatPercent: _targetBodyFatPercent,
-            targetMuscleMassPercent: _targetMuscleMassPercent
-        });
-        emit GoalCreated(
-            _user,
-            Goal(_targetBodyFatPercent, _targetMuscleMassPercent)
-        );
+        // Check and update NFT based on user goals
+        // checkAndUpdateNFT(_user);
     }
 
     // Check if the user has achieved their goals and mint an NFT
-    function checkAndMintNFT(address _user) internal {
-        Goal memory goal = userGoals[_user];
-        Measurement[] memory measurements = userMeasurements[_user];
-        Measurement memory latestMeasurement = measurements[measurements.length - 1];
+    // function checkAndUpdateNFT(address _user) internal {
+    //     Goal memory goal = userGoals[_user];
+    //     Measurement[] memory measurements = userMeasurements[_user];
+    //     Measurement memory latestMeasurement = measurements[measurements.length - 1];
 
-        // Check for body fat percentage goal achievement
-        if (latestMeasurement.bodyFat <= goal.targetBodyFatPercent) {
-            nftContract.safeMint(_user, 1, "https://gateway.pinata.cloud/ipfs/QmVHh4fCDcqa4MGjYnJP4n4kyKFy4v4RavefGDfg7er237");
-            emit NFTMinted(_user, "https://gateway.pinata.cloud/ipfs/QmVHh4fCDcqa4MGjYnJP4n4kyKFy4v4RavefGDfg7er237");
-        }
+    //     // Check for body fat percentage goal achievement
+    //     if (latestMeasurement.bodyFat <= goal.targetBodyFatPercentage) {
+    //         nftContract.safeMint(_user, 1, "https://gateway.pinata.cloud/ipfs/QmVHh4fCDcqa4MGjYnJP4n4kyKFy4v4RavefGDfg7er237");
+    //         emit NFTMinted(_user, "https://gateway.pinata.cloud/ipfs/QmVHh4fCDcqa4MGjYnJP4n4kyKFy4v4RavefGDfg7er237");
 
-        // Check for muscle mass percentage goal achievement
-        if (latestMeasurement.muscleMass >= goal.targetMuscleMassPercent) {
-            nftContract.safeMint(_user, 2, "https://gateway.pinata.cloud/ipfs/QmPqqvsyi7L3R3JF3RZGX3S25UtFWC27763S5HPr8EHWxX");
-            emit NFTMinted(_user, "https://gateway.pinata.cloud/ipfs/QmPqqvsyi7L3R3JF3RZGX3S25UtFWC27763S5HPr8EHWxX");
-        }
+    //         // Update the NFT metadata
+    //         // nftContract.updateTokenURI(0, updatedTokenURI);
+    //     }
+
+    //     // Check for muscle mass percentage goal achievement
+    //     if (latestMeasurement.muscleMass >= goal.targetMuscleMass) {
+    //         nftContract.safeMint(_user, 2, "https://gateway.pinata.cloud/ipfs/QmPqqvsyi7L3R3JF3RZGX3S25UtFWC27763S5HPr8EHWxX");
+    //         emit NFTMinted(_user, "https://gateway.pinata.cloud/ipfs/QmPqqvsyi7L3R3JF3RZGX3S25UtFWC27763S5HPr8EHWxX");
+    //     }
+    // }
+
+    // Create user goal
+    function setGoal(
+        uint8 _targetBodyFatPercentage,
+        uint8 _targetMuscleMass,
+        address _user
+    ) external {
+        require(userToCoach[_user] == msg.sender);
+        require(
+            _targetBodyFatPercentage > 0 && _targetMuscleMass > 0,
+            "Invalid goal values."
+        );
+        require(
+            userMeasurements[_user].length > 0,
+            "User must have logged measurements before setting a goal."
+        );
+        userGoals[_user] = Goal({
+            targetBodyFatPercentage: _targetBodyFatPercentage,
+            targetMuscleMass: _targetMuscleMass
+        });
+        emit GoalCreated(
+            _user,
+            Goal(_targetBodyFatPercentage, _targetMuscleMass)
+        );
     }
 
     // Get user measurements
