@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./DynamicNFT.sol"; // Import your DynamicNFT contract
+// import "./DynamicNFT.sol"; // Import your DynamicNFT contract
 
 contract FitnessTracking {
     // User measurements
@@ -48,11 +48,11 @@ contract FitnessTracking {
 
     // contract owner
     address public owner;
-    DynamicNFT private nftContract; // Reference to the DynamicNFT contract
+    // DynamicNFT private nftContract; // Reference to the DynamicNFT contract
 
-    constructor(address _nftContractAddress) {
+    constructor() {
         owner = msg.sender;
-        nftContract = DynamicNFT(_nftContractAddress);
+        // nftContract = DynamicNFT(_nftContractAddress);
     }
 
     // Register new coach
@@ -106,30 +106,30 @@ contract FitnessTracking {
         emit MeasurementLogged(_user, newMeasurement);
         
         // Check and update NFT based on user goals
-        checkAndUpdateNFT(_user);
+        // checkAndUpdateNFT(_user);
     }
 
     // Check if the user has achieved their goals and mint an NFT
-    function checkAndUpdateNFT(address _user) internal {
-        Goal memory goal = userGoals[_user];
-        Measurement[] memory measurements = userMeasurements[_user];
-        Measurement memory latestMeasurement = measurements[measurements.length - 1];
+    // function checkAndUpdateNFT(address _user) internal {
+    //     Goal memory goal = userGoals[_user];
+    //     Measurement[] memory measurements = userMeasurements[_user];
+    //     Measurement memory latestMeasurement = measurements[measurements.length - 1];
 
-        // Check for body fat percentage goal achievement
-        if (latestMeasurement.bodyFat <= goal.targetBodyFatPercentage) {
-            nftContract.safeMint(_user, 1, "https://gateway.pinata.cloud/ipfs/QmVHh4fCDcqa4MGjYnJP4n4kyKFy4v4RavefGDfg7er237");
-            emit NFTMinted(_user, "https://gateway.pinata.cloud/ipfs/QmVHh4fCDcqa4MGjYnJP4n4kyKFy4v4RavefGDfg7er237");
+    //     // Check for body fat percentage goal achievement
+    //     if (latestMeasurement.bodyFat <= goal.targetBodyFatPercentage) {
+    //         nftContract.safeMint(_user, 1, "https://gateway.pinata.cloud/ipfs/QmVHh4fCDcqa4MGjYnJP4n4kyKFy4v4RavefGDfg7er237");
+    //         emit NFTMinted(_user, "https://gateway.pinata.cloud/ipfs/QmVHh4fCDcqa4MGjYnJP4n4kyKFy4v4RavefGDfg7er237");
 
-            // Update the NFT metadata
-            // nftContract.updateTokenURI(0, updatedTokenURI);
-        }
+    //         // Update the NFT metadata
+    //         // nftContract.updateTokenURI(0, updatedTokenURI);
+    //     }
 
-        // Check for muscle mass percentage goal achievement
-        if (latestMeasurement.muscleMass >= goal.targetMuscleMass) {
-            nftContract.safeMint(_user, 2, "https://gateway.pinata.cloud/ipfs/QmPqqvsyi7L3R3JF3RZGX3S25UtFWC27763S5HPr8EHWxX");
-            emit NFTMinted(_user, "https://gateway.pinata.cloud/ipfs/QmPqqvsyi7L3R3JF3RZGX3S25UtFWC27763S5HPr8EHWxX");
-        }
-    }
+    //     // Check for muscle mass percentage goal achievement
+    //     if (latestMeasurement.muscleMass >= goal.targetMuscleMass) {
+    //         nftContract.safeMint(_user, 2, "https://gateway.pinata.cloud/ipfs/QmPqqvsyi7L3R3JF3RZGX3S25UtFWC27763S5HPr8EHWxX");
+    //         emit NFTMinted(_user, "https://gateway.pinata.cloud/ipfs/QmPqqvsyi7L3R3JF3RZGX3S25UtFWC27763S5HPr8EHWxX");
+    //     }
+    // }
 
     // Create user goal
     function setGoal(
