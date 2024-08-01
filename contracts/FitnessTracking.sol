@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Compatible with OpenZeppelin Contracts ^5.0.0
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./DynamicNFT.sol";
@@ -55,7 +55,7 @@ contract FitnessTracking is Ownable {
     DynamicNFT private nftContract;
 
     // Constructor
-    constructor(address _nftContractAddress) Ownable(0x1B04132D7F2427cB160AB57d0829C48D93e3fc91) {
+    constructor(address _nftContractAddress, address _initialOwner) Ownable(_initialOwner) {
         nftContract = DynamicNFT(_nftContractAddress);
     }
 

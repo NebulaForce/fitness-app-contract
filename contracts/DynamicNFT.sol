@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Compatible with OpenZeppelin Contracts ^5.0.0
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 // Importing required OpenZeppelin contracts for ERC721 token functionality
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -30,9 +30,9 @@ contract DynamicNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
     mapping(uint256 => string) private tokenTypes;
 
     // Constructor to initialize the ERC721 token with a name and symbol
-    constructor(address initialOwner) 
-        ERC721("FitnessMerged", "MFN") 
-        Ownable(0x1B04132D7F2427cB160AB57d0829C48D93e3fc91) 
+    constructor(address _initialOwner) 
+        ERC721("DynamicNFT", "DT") 
+        Ownable(_initialOwner) 
     {}
 
     // Function to mint a new token, restricted to the owner
