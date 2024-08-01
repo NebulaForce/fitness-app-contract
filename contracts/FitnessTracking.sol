@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 // import "./DynamicNFT.sol"; // Import your DynamicNFT contract
 
 contract FitnessTracking {
-
     // User measurements
     struct Measurement {
         uint8 weight;
@@ -18,7 +17,9 @@ contract FitnessTracking {
 
     // User goals
     struct Goal {
+        uint8 initialBodyFatPercentage;
         uint8 targetBodyFatPercentage;
+        uint8 initialMuscleMass;
         uint8 targetMuscleMass;
     }
 
@@ -49,6 +50,7 @@ contract FitnessTracking {
 
     // contract owner
     address public owner;
+
     // DynamicNFT private nftContract; // Reference to the DynamicNFT contract
 
     constructor() {
@@ -57,18 +59,22 @@ contract FitnessTracking {
     }
 
     // Register new coach
-    function addCoach(address _coachAddress, string memory _name, string memory _email) external {
-      require(msg.sender == owner, "You are not owner!!");
-      coaches[_coachAddress] = Coach(_name, _email);
+    function addCoach(
+        address _coachAddress,
+        string memory _name,
+        string memory _email
+    ) external {
+        require(msg.sender == owner, "You are not owner!!");
+        coaches[_coachAddress] = Coach(_name, _email);
     }
 
     // Register user
     function register(string memory _name, string memory _email) external {
-      users[msg.sender] = User(_name, _email);
+        users[msg.sender] = User(_name, _email);
 
-      // Mint initial NFT for the user
-    //   string memory initialTokenURI = "ipfs://<initial-metadata-uri>";
-    //   nftContract.mint(msg.sender, initialTokenURI);
+        // Mint initial NFT for the user
+        //   string memory initialTokenURI = "ipfs://<initial-metadata-uri>";
+        //   nftContract.mint(msg.sender, initialTokenURI);
     }
 
     // Assign coach to user
@@ -105,7 +111,7 @@ contract FitnessTracking {
 
         userMeasurements[_user].push(newMeasurement);
         emit MeasurementLogged(_user, newMeasurement);
-        
+
         // Check and update NFT based on user goals
         // checkAndUpdateNFT(_user);
     }
@@ -143,25 +149,38 @@ contract FitnessTracking {
             _targetBodyFatPercentage > 0 && _targetMuscleMass > 0,
             "Invalid goal values."
         );
-        require(
-            userMeasurements[_user].length > 0,
-            "User must have logged measurements before setting a goal."
-        );
+
+        Measurement[] memory measurements = userMeasurements[_user];
+
+        // Ensure there is at least one measurement
+        require(measurements.length > 0, "No measurements available");
+
+        Measurement memory latestMeasurement = measurements[measurements.length - 1];
+
         userGoals[_user] = Goal({
+            initialBodyFatPercentage: latestMeasurement.bodyFat,
             targetBodyFatPercentage: _targetBodyFatPercentage,
+            initialMuscleMass: latestMeasurement.muscleMass,
             targetMuscleMass: _targetMuscleMass
         });
         emit GoalCreated(
             _user,
-            Goal(_targetBodyFatPercentage, _targetMuscleMass)
+            Goal(latestMeasurement.bodyFat, _targetBodyFatPercentage, latestMeasurement.muscleMass, _targetMuscleMass)
         );
     }
 
     // Get user measurements
-    function getMeasurements(
+    function getLatestMeasurement(
         address _user
-    ) external view returns (Measurement[] memory) {
-        require(userToCoach[_user] == msg.sender || _user == msg.sender);
-        return userMeasurements[_user];
+    ) external view returns (Measurement memory) {
+
+        // Retrieve the measurements for the user
+        Measurement[] memory measurements = userMeasurements[_user];
+
+        // Ensure there is at least one measurement
+        require(measurements.length > 0, "No measurements available");
+
+        // Return the latest measurement
+        return measurements[measurements.length - 1];
     }
 }
