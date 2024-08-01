@@ -3,7 +3,6 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./DynamicNFT.sol";
 
 contract FitnessTracking is Ownable {
 
@@ -51,12 +50,8 @@ contract FitnessTracking is Ownable {
     event GoalCreated(address indexed user, Goal goal);
     event NFTMinted(address indexed user, string tokenURI);
 
-    // Reference to the DynamicNFT contract
-    DynamicNFT private nftContract;
-
     // Constructor
-    constructor(address _nftContractAddress, address _initialOwner) Ownable(_initialOwner) {
-        nftContract = DynamicNFT(_nftContractAddress);
+    constructor(address _initialOwner) Ownable(_initialOwner) {
     }
 
     // Register new coach
@@ -78,15 +73,6 @@ contract FitnessTracking is Ownable {
 
         userToCoach[_user] = _coach;
         emit CoachAssigned(_user, _coach);
-
-        // Mint the first NFT for the user
-        uint256 tokenId = nftContract.getCurrentSupplyFirstNFT() + 1;
-        require(tokenId <= nftContract.MAX_SUPPLY_FIRST_NFT(), "Max supply reached for firstNFT");
-
-        nftContract.safeMint(_user, tokenId, "firstNFT");
-
-        // Emit the NFTMinted event with the correct token URI
-        emit NFTMinted(_user, nftContract.tokenURI(tokenId));
     }
 
     // Log a new measurement and check for NFT minting
@@ -112,25 +98,6 @@ contract FitnessTracking is Ownable {
 
         userMeasurements[_user].push(newMeasurement);
         emit MeasurementLogged(_user, newMeasurement);
-
-        // Retrieve the user's goals
-        Goal memory goal = userGoals[_user];
-
-        // Check for body fat percentage goal achievement
-        if (_bodyFat <= goal.targetBodyFatPercentage) {
-            uint256 tokenId = nftContract.getCurrentSupplyBodyFat() + 1; // Generate a new token ID
-            require(tokenId <= nftContract.MAX_SUPPLY_BODY_FAT(), "Max supply reached for bodyFat");
-            nftContract.safeMint(_user, tokenId, "bodyFat");
-            emit NFTMinted(_user, nftContract.tokenURI(tokenId));
-        }
-
-        // Check for muscle mass percentage goal achievement
-        if (_muscleMass >= goal.targetMuscleMass) {
-            uint256 tokenId = nftContract.getCurrentSupplyMuscleMass() + 1; // Generate a new token ID
-            require(tokenId <= nftContract.MAX_SUPPLY_MUSCLE_MASS(), "Max supply reached for muscleMass");
-            nftContract.safeMint(_user, tokenId, "muscleMass");
-            emit NFTMinted(_user, nftContract.tokenURI(tokenId));
-        }
     }
 
     // Set user goals
