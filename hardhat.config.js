@@ -2,8 +2,6 @@ require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-verify");
 require("dotenv").config();
 
-const { PRIVATE_KEY, ETHERSCAN_API_KEY } = process.env;
-
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
@@ -23,12 +21,12 @@ module.exports = {
     },
     optimismSepolia: {
       url: process.env.SEPOLIA_RPC_URL,
-      accounts: [`0x${PRIVATE_KEY}`],
+      accounts: [`0x${process.env.PRIVATE_KEY}`],
     }
   },
   etherscan: {
     apiKey: {
-      optimismSepolia: ETHERSCAN_API_KEY,
+      optimismSepolia: process.env.ETHERSCAN_API_KEY,
     },
     customChains: [
       {
