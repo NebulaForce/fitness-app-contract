@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
+// Compatible with OpenZeppelin Contracts ^5.0.0
 pragma solidity ^0.8.0;
 
-// import "./DynamicNFT.sol"; // Import your DynamicNFT contract
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./DynamicNFT.sol";
 
-contract FitnessTracking {
+contract FitnessTracking is Ownable {
+
     // User measurements
     struct Measurement {
         uint8 weight;
@@ -42,53 +45,51 @@ contract FitnessTracking {
     mapping(address => Measurement[]) public userMeasurements;
     mapping(address => Goal) public userGoals;
 
-    // events
+    // Events
     event CoachAssigned(address indexed user, address indexed coach);
     event MeasurementLogged(address indexed user, Measurement measurement);
     event GoalCreated(address indexed user, Goal goal);
     event NFTMinted(address indexed user, string tokenURI);
 
-    // contract owner
-    address public owner;
+    // Reference to the DynamicNFT contract
+    DynamicNFT private nftContract;
 
-    // DynamicNFT private nftContract; // Reference to the DynamicNFT contract
-
-    constructor() {
-        owner = msg.sender;
-        // nftContract = DynamicNFT(_nftContractAddress);
+    // Constructor
+    constructor(address _nftContractAddress) Ownable(0x1B04132D7F2427cB160AB57d0829C48D93e3fc91) {
+        nftContract = DynamicNFT(_nftContractAddress);
     }
 
     // Register new coach
-    function addCoach(
-        address _coachAddress,
-        string memory _name,
-        string memory _email
-    ) external {
-        require(msg.sender == owner, "You are not owner!!");
+    function addCoach(address _coachAddress, string memory _name, string memory _email) external onlyOwner {
         coaches[_coachAddress] = Coach(_name, _email);
     }
 
     // Register user
     function register(string memory _name, string memory _email) external {
         users[msg.sender] = User(_name, _email);
-
-        // Mint initial NFT for the user
-        //   string memory initialTokenURI = "ipfs://<initial-metadata-uri>";
-        //   nftContract.mint(msg.sender, initialTokenURI);
     }
 
-    // Assign coach to user
-    function assignCoach(address _user, address _coach) external {
-        require(msg.sender == owner, "You are not owner!!");
+    // Once the coach is assigned to the user, the firstNFT is minted to the user
+    function assignCoach(address _user, address _coach) external onlyOwner {
         require(
-            bytes(coaches[_coach].name).length > 0,
+            bytes(coaches[_coach].name).length > 0 && bytes(coaches[_coach].email).length > 0,
             "Only registered coaches can be assigned."
         );
+
         userToCoach[_user] = _coach;
         emit CoachAssigned(_user, _coach);
+
+        // Mint the first NFT for the user
+        uint256 tokenId = nftContract.getCurrentSupplyFirstNFT() + 1;
+        require(tokenId <= nftContract.MAX_SUPPLY_FIRST_NFT(), "Max supply reached for firstNFT");
+
+        nftContract.safeMint(_user, tokenId, "firstNFT");
+
+        // Emit the NFTMinted event with the correct token URI
+        emit NFTMinted(_user, nftContract.tokenURI(tokenId));
     }
 
-    // Register new measurement
+    // Log a new measurement and check for NFT minting
     function logMeasurement(
         uint8 _weight,
         uint8 _BMI,
@@ -98,7 +99,7 @@ contract FitnessTracking {
         uint8 _muscleMass,
         address _user
     ) external {
-        require(userToCoach[_user] == msg.sender);
+        require(userToCoach[_user] == msg.sender, "Unauthorized");
         Measurement memory newMeasurement = Measurement({
             weight: _weight,
             BMI: _BMI,
@@ -112,39 +113,33 @@ contract FitnessTracking {
         userMeasurements[_user].push(newMeasurement);
         emit MeasurementLogged(_user, newMeasurement);
 
-        // Check and update NFT based on user goals
-        // checkAndUpdateNFT(_user);
+        // Retrieve the user's goals
+        Goal memory goal = userGoals[_user];
+
+        // Check for body fat percentage goal achievement
+        if (_bodyFat <= goal.targetBodyFatPercentage) {
+            uint256 tokenId = nftContract.getCurrentSupplyBodyFat() + 1; // Generate a new token ID
+            require(tokenId <= nftContract.MAX_SUPPLY_BODY_FAT(), "Max supply reached for bodyFat");
+            nftContract.safeMint(_user, tokenId, "bodyFat");
+            emit NFTMinted(_user, nftContract.tokenURI(tokenId));
+        }
+
+        // Check for muscle mass percentage goal achievement
+        if (_muscleMass >= goal.targetMuscleMass) {
+            uint256 tokenId = nftContract.getCurrentSupplyMuscleMass() + 1; // Generate a new token ID
+            require(tokenId <= nftContract.MAX_SUPPLY_MUSCLE_MASS(), "Max supply reached for muscleMass");
+            nftContract.safeMint(_user, tokenId, "muscleMass");
+            emit NFTMinted(_user, nftContract.tokenURI(tokenId));
+        }
     }
 
-    // Check if the user has achieved their goals and mint an NFT
-    // function checkAndUpdateNFT(address _user) internal {
-    //     Goal memory goal = userGoals[_user];
-    //     Measurement[] memory measurements = userMeasurements[_user];
-    //     Measurement memory latestMeasurement = measurements[measurements.length - 1];
-
-    //     // Check for body fat percentage goal achievement
-    //     if (latestMeasurement.bodyFat <= goal.targetBodyFatPercentage) {
-    //         nftContract.safeMint(_user, 1, "https://gateway.pinata.cloud/ipfs/QmVHh4fCDcqa4MGjYnJP4n4kyKFy4v4RavefGDfg7er237");
-    //         emit NFTMinted(_user, "https://gateway.pinata.cloud/ipfs/QmVHh4fCDcqa4MGjYnJP4n4kyKFy4v4RavefGDfg7er237");
-
-    //         // Update the NFT metadata
-    //         // nftContract.updateTokenURI(0, updatedTokenURI);
-    //     }
-
-    //     // Check for muscle mass percentage goal achievement
-    //     if (latestMeasurement.muscleMass >= goal.targetMuscleMass) {
-    //         nftContract.safeMint(_user, 2, "https://gateway.pinata.cloud/ipfs/QmPqqvsyi7L3R3JF3RZGX3S25UtFWC27763S5HPr8EHWxX");
-    //         emit NFTMinted(_user, "https://gateway.pinata.cloud/ipfs/QmPqqvsyi7L3R3JF3RZGX3S25UtFWC27763S5HPr8EHWxX");
-    //     }
-    // }
-
-    // Create user goal
+    // Set user goals
     function setGoal(
         uint8 _targetBodyFatPercentage,
         uint8 _targetMuscleMass,
         address _user
     ) external {
-        require(userToCoach[_user] == msg.sender);
+        require(userToCoach[_user] == msg.sender, "Unauthorized");
         require(
             _targetBodyFatPercentage > 0 && _targetMuscleMass > 0,
             "Invalid goal values."
